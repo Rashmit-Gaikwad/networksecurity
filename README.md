@@ -5,10 +5,10 @@ AWS_ACCESS_KEY_ID=
 
 AWS_SECRET_ACCESS_KEY=
 
-AWS_REGION = us-east-1
+AWS_REGION = 
 
 AWS_ECR_LOGIN_URI = 788614365622.dkr.ecr.us-east-1.amazonaws.com/networkssecurity
-ECR_REPOSITORY_NAME = networkssecurity
+ECR_REPOSITORY_NAME = 
 
 
 Docker Setup In EC2 commands to be Executed

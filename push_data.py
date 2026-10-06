@@ -49,7 +49,7 @@ class NetworkDataExtract():
             raise NetworkSecurityException(e,sys)
         
 if __name__=='__main__':
-    FILE_PATH="Network_Data\phisingData.csv"
+    FILE_PATH=os.path.join("Network_Data","phisingData.csv")
     DATABASE="AI"
     Collection="NetworkData"
     networkobj=NetworkDataExtract()

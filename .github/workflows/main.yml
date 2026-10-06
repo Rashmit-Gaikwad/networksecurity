@@ -19,11 +19,33 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Lint code
-        run: echo "Linting repository"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
 
-      - name: Run unit tests
-        run: echo "Running unit tests"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check that the code compiles
+        run: python -m compileall -q networksecurity app.py main.py push_data.py
+
+      - name: Smoke-test the saved model
+        run: |
+          python - <<'EOF'
+          import pandas as pd
+          from networksecurity.utils.main_utils.utils import load_object
+          from networksecurity.utils.ml_utils.model.estimator import NetworkModel
+
+          model = NetworkModel(load_object("final_model/preprocessor.pkl"), load_object("final_model/model.pkl"))
+          predictions = model.predict(pd.read_csv("valid_data/test.csv"))
+          assert len(predictions) == 12 and set(predictions) <= {0, 1}, predictions
+          print("predictions:", predictions)
+          EOF
+
+      - name: Build Docker image
+        run: docker build -t networksecurity:ci .
 
   build-and-push-ecr-image:
     name: Continuous Delivery

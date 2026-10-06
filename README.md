@@ -93,6 +93,16 @@ docker run -d -p 8080:8000 --env-file .env --name networksecurity networksecurit
 
 Open http://localhost:8080/docs. If `.env` points at a MongoDB on your own machine (`localhost`), add `-e MONGO_DB_URL=mongodb://host.docker.internal:27017/ -e MONGODB_URL_KEY=mongodb://host.docker.internal:27017/` to the `docker run` command, because `localhost` inside the container is the container itself.
 
+## Testing
+
+`test_data/` has CSV files for checking the API: a 2,211-row held-out set with expected labels, small phishing and legitimate samples, a sample with blank cells, and two invalid files that should be rejected. With the app running:
+
+```bash
+python test_data/check_predictions.py
+```
+
+See [test_data/README.md](test_data/README.md) for every file and its expected result.
+
 ## CI/CD
 
 The GitHub Actions workflow in `.github/workflows/main.yml` runs on every push and pull request to `main`. It installs the requirements, compiles the code, runs the saved model on `valid_data/test.csv`, and builds the Docker image.
@@ -116,4 +126,5 @@ networksecurity/
 data_schema/schema.yaml    Expected columns
 final_model/               Model and preprocessor used by the API
 valid_data/test.csv        Sample input for /predict
+test_data/                 CSV files and a script for checking the API
 ```

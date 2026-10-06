@@ -241,6 +241,7 @@ class FetchedPage:
     final_url: str
     html: str
     redirects: int
+    status_code: int
 
 
 def fetch_page(url: str) -> FetchedPage:
@@ -274,7 +275,7 @@ def fetch_page(url: str) -> FetchedPage:
     response.close()
     content_type = response.headers.get("Content-Type", "")
     html = body.decode(response.encoding or "utf-8", errors="replace") if "html" in content_type.lower() else ""
-    return FetchedPage(final_url=current, html=html, redirects=redirects)
+    return FetchedPage(final_url=current, html=html, redirects=redirects, status_code=response.status_code)
 
 
 def ssl_feature(url: str) -> Optional[int]:
@@ -378,11 +379,12 @@ class URLFeatureExtractor:
                         error = f"the page could not be downloaded ({type(e).__name__})"
                 if page is None:
                     notes.append(error)
-                elif not page.html:
-                    notes.append("the response was not an HTML page")
+                elif not page.html.strip():
+                    # Some large sites send bots an empty page (e.g. HTTP 202 or 503)
+                    notes.append(f"the site returned no HTML content (HTTP {page.status_code}), so page features were imputed")
 
             features.update(url_text_features(checked))
-            if page is not None and page.html:
+            if page is not None and page.html.strip():
                 features.update(page_features(page.html, page.final_url))
             if resolves:
                 features["SSLfinal_State"] = ssl_feature(page.final_url if page else checked)

@@ -58,7 +58,9 @@ class ModelTrainer:
             mlflow.log_metric("f1_score",f1_score)
             mlflow.log_metric("precision",precision_score)
             mlflow.log_metric("recall_score",recall_score)
-            mlflow.sklearn.log_model(best_model,"model")
+            # MLflow 3.x defaults to skops, which rejects tree-based models (sklearn.tree._tree.Tree)
+            serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE
+            mlflow.sklearn.log_model(best_model,"model",serialization_format=serialization_format)
             # Model registry does not work with file store
             if tracking_url_type_store != "file":
 
@@ -66,9 +68,9 @@ class ModelTrainer:
                 # There are other ways to use the Model Registry, which depends on the use case,
                 # please refer to the doc for more information:
                 # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-                mlflow.sklearn.log_model(best_model, "model", registered_model_name="best_model")
+                mlflow.sklearn.log_model(best_model, "model", registered_model_name="best_model", serialization_format=serialization_format)
             else:
-                mlflow.sklearn.log_model(best_model, "model")
+                mlflow.sklearn.log_model(best_model, "model", serialization_format=serialization_format)
 
 
         

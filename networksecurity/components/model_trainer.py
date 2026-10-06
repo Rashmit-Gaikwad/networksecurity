@@ -29,9 +29,12 @@ from urllib.parse import urlparse
 import dagshub
 #dagshub.init(repo_owner='krishnaik06', repo_name='networksecurity', mlflow=True)
 
-os.environ["MLFLOW_TRACKING_URI"]="https://dagshub.com/Rashmit-Gaikwad/networksecurity.mlflow"
-os.environ["MLFLOW_TRACKING_USERNAME"]="Rashmit-Gaikwad"
-os.environ["MLFLOW_TRACKING_PASSWORD"]="a3fbbc7fc1634e1844608c59041563da672b0ff4"
+from dotenv import load_dotenv
+load_dotenv()
+
+## MLflow reads MLFLOW_TRACKING_URI/USERNAME/PASSWORD from the environment (.env locally, GitHub secrets in CI)
+os.environ.setdefault("MLFLOW_TRACKING_URI","https://dagshub.com/Rashmit-Gaikwad/networksecurity.mlflow")
+os.environ.setdefault("MLFLOW_TRACKING_USERNAME","Rashmit-Gaikwad")
 
 
 
@@ -58,7 +61,9 @@ class ModelTrainer:
             mlflow.log_metric("f1_score",f1_score)
             mlflow.log_metric("precision",precision_score)
             mlflow.log_metric("recall_score",recall_score)
-            mlflow.sklearn.log_model(best_model,"model")
+            # MLflow 3.x defaults to skops, which rejects tree-based models (sklearn.tree._tree.Tree)
+            serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE
+            mlflow.sklearn.log_model(best_model,"model",serialization_format=serialization_format)
             # Model registry does not work with file store
             if tracking_url_type_store != "file":
 
@@ -66,9 +71,9 @@ class ModelTrainer:
                 # There are other ways to use the Model Registry, which depends on the use case,
                 # please refer to the doc for more information:
                 # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-                mlflow.sklearn.log_model(best_model, "model", registered_model_name="best_model")
+                mlflow.sklearn.log_model(best_model, "model", registered_model_name="best_model", serialization_format=serialization_format)
             else:
-                mlflow.sklearn.log_model(best_model, "model")
+                mlflow.sklearn.log_model(best_model, "model", serialization_format=serialization_format)
 
 
         

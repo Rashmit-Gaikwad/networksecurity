@@ -1,10 +1,11 @@
 python-dotenv
-pandas
-numpy
+## pinned so pickled models load the same locally and in the python:3.10 Docker image
+pandas==2.3.3
+numpy==2.2.6
 pymongo
 certifi
 pymongo[srv]
-scikit-learn
+scikit-learn==1.7.2
 mlflow
 pyaml
 dagshub

@@ -1,0 +1,24 @@
+url,expected,why
+https://www.google.com,legitimate,well-known site
+https://github.com,legitimate,well-known site
+https://www.wikipedia.org,legitimate,well-known site
+https://en.wikipedia.org/wiki/Phishing,legitimate,well-known site on a sub-domain
+https://www.python.org,legitimate,well-known site
+https://www.microsoft.com,legitimate,well-known site
+https://www.amazon.com,legitimate,well-known site
+https://stackoverflow.com,legitimate,well-known site
+https://www.bbc.co.uk,legitimate,well-known site with a two-part suffix
+https://www.apple.com,legitimate,well-known site
+https://www.mozilla.org,legitimate,well-known site
+https://www.nytimes.com,legitimate,well-known site
+https://www.linkedin.com,legitimate,well-known site
+https://www.reddit.com,legitimate,well-known site
+https://www.paypal.com,legitimate,the real PayPal
+http://192.0.2.15/paypal/login.php,phishing,IP address instead of a domain (reserved test range)
+http://198.51.100.7:8080/bank/verify-account,phishing,IP address and a non-standard port (reserved test range)
+http://paypal.com.secure-login.account-verify.example.com/webscr?cmd=_login-run&dispatch=5885d80a13c0db1f8e263663d3faee8d,phishing,brand name hidden in sub-domains of a domain that doesn't resolve
+http://secure-update-appleid.example.com@203.0.113.9/login,phishing,@ trick: the real host is an IP address (reserved test range)
+http://login.microsoftonline.com.verify-session.example.org/oauth2/authorize?client_id=4765445b-32c6-49b0-83e6-1d93765276ca,phishing,long URL imitating a Microsoft login
+https://amazon-account-security.invalid/update-payment,phishing,brand-like domain that cannot exist (.invalid)
+http://www.netflix-billing-update.test/account/payment,phishing,brand-like domain that cannot exist (.test)
+http://bankofamerica.com.alerts.example.net/signin,phishing,bank name hidden in sub-domains of a domain that doesn't resolve

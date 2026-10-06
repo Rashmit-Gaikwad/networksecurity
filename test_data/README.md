@@ -42,6 +42,19 @@ In Windows PowerShell, type `curl.exe` instead of `curl`.
 
 If you retrain the model, the held-out files are no longer unseen by the new model, because each run makes a new random split. Its test split is in `Artifacts/<timestamp>/data_ingestion/ingested/test.csv`.
 
+## Checking real URLs
+
+`urls_to_check.csv` lists 15 well-known legitimate sites and 8 hand-made phishing-style URLs for `POST /predict-url`. The fake URLs use reserved test IP ranges (`192.0.2.x`, `198.51.100.x`, `203.0.113.x`), `example.*` domains, or the `.test` and `.invalid` TLDs, so they can never reach a real phishing site. With the app running:
+
+```bash
+python test_data/check_urls.py                              # Docker, port 8080
+python test_data/check_urls.py --url http://localhost:8000  # python app.py
+```
+
+It waits a second between URLs, because the traffic-rank service allows about one request per second. Results depend on the live sites, so they can change over time.
+
+The hand-made URLs are easy cases: their domains don't exist and most use plain HTTP. They show that the extractor and the model work end to end. They don't show how well it catches real, current phishing sites, which usually have valid HTTPS certificates and working pages.
+
 ## Results with the current model
 
 | File | Result |
@@ -50,3 +63,4 @@ If you retrain the model, the held-out files are no longer unseen by the new mod
 | `phishing_10.csv`, `legitimate_10.csv` | 10 of 10 correct each |
 | `missing_values_20.csv` | 20 of 20 correct |
 | Both invalid files | HTTP 500, with "The feature names should match those that were passed during fit" in the server log |
+| `urls_to_check.csv` (October 2026) | 23 of 23 as expected: all 15 legitimate sites with a phishing probability of 0.031 or lower, all 8 fake URLs at 0.943 or higher; 2–6 seconds per URL |

@@ -10,7 +10,7 @@ An end-to-end MLOps project that classifies websites as phishing or legitimate f
    2. **Validation:** writes a drift report comparing train and test (Kolmogorov–Smirnov test per column).
    3. **Transformation:** fits a KNN imputer and maps the target from -1/1 to 0/1.
    4. **Training:** grid-searches Random Forest, Decision Tree, Gradient Boosting, Logistic Regression and AdaBoost, logs metrics and the best model to MLflow, and saves it to `final_model/`.
-3. The FastAPI app (`app.py`) loads `final_model/` and scores uploaded CSV files.
+3. The FastAPI app (`app.py`) loads `final_model/` and scores uploaded CSV files, or a single URL whose features it computes itself.
 
 ## Requirements
 
@@ -84,6 +84,32 @@ The CSV needs exactly the 30 feature columns, without `Result`. The response is 
 
 `GET /train` runs the whole training pipeline inside the request, so the server is busy until it finishes.
 
+### Check a single URL
+
+`POST /predict-url` takes a link instead of a CSV:
+
+```bash
+curl -X POST http://localhost:8000/predict-url -H "Content-Type: application/json" -d '{"url": "https://github.com"}'
+```
+
+On Windows, the Swagger UI at `/docs` is easier than quoting JSON for curl. The response contains:
+
+| Field | Meaning |
+| --- | --- |
+| `prediction` | `phishing` or `legitimate` |
+| `phishing_probability` | The model's probability that the site is phishing, from 0 to 1 |
+| `features` | All 30 feature values; `null` where a feature could not be measured |
+| `filled_by_imputer` | The features the KNN imputer filled in from the most similar training rows |
+| `notes` | Anything that limited the check, such as a page that could not be downloaded |
+
+[networksecurity/components/url_feature_extraction.py](networksecurity/components/url_feature_extraction.py) computes the features with the dataset's published rules. It uses the URL text, the downloaded page (HTML only, JavaScript is never run), the site's certificate, DNS, the domain's registration date (RDAP), and its traffic rank (Tranco, which replaces the retired Alexa ranking). A check usually takes 2–6 seconds. Private and local addresses are never contacted, including through redirects.
+
+Limits to keep in mind:
+
+- **11 features are never measured.** Seven are coded in the training data in a way that contradicts their published rule, so computing them would mislead the model. The other four (`Page_Rank`, `Google_Index`, `Links_pointing_to_page`, `Statistical_report`) need services that no longer exist or need paid keys. The imputer fills all of them.
+- **The training data is from 2012–2015.** The most important feature, `SSLfinal_State`, treated a trusted HTTPS certificate as a strong sign of a legitimate site. Most phishing sites now have free, valid certificates, so expect more phishing sites to slip through than the 97.6% test accuracy suggests.
+- **It has only been tested on well-known sites and hand-made phishing-style URLs** (see [test_data/README.md](test_data/README.md)), not on live phishing sites.
+
 ## Run with Docker
 
 ```bash
@@ -95,29 +121,37 @@ Open http://localhost:8080/docs. If `.env` points at a MongoDB on your own machi
 
 ## Testing
 
-`test_data/` has CSV files for checking the API: a 2,211-row held-out set with expected labels, small phishing and legitimate samples, a sample with blank cells, and two invalid files that should be rejected. With the app running:
+`test_data/` has CSV files for checking the API: a 2,211-row held-out set with expected labels, small phishing and legitimate samples, a sample with blank cells, two invalid files that should be rejected, and a list of URLs for `/predict-url`. With the app running:
 
 ```bash
 python test_data/check_predictions.py
+python test_data/check_urls.py
 ```
 
 See [test_data/README.md](test_data/README.md) for every file and its expected result.
 
+The unit tests in `tests/` check the URL feature rules without any network access:
+
+```bash
+pip install pytest
+python -m pytest tests
+```
+
 ## CI/CD
 
-The GitHub Actions workflow in `.github/workflows/main.yml` runs on every push and pull request to `main`. It installs the requirements, compiles the code, runs the saved model on `valid_data/test.csv`, and builds the Docker image.
+The GitHub Actions workflow in `.github/workflows/main.yml` runs on every push and pull request to `main`. It installs the requirements, compiles the code, runs the unit tests, runs the saved model on `valid_data/test.csv`, and builds the Docker image.
 
 The workflow also contains jobs that push the image to Amazon ECR and run it on an EC2 instance through a self-hosted runner. They only run when started by hand from the Actions tab. The AWS resources for this project have been removed, so those jobs need new AWS secrets and a new runner before they can work.
 
 ## Project structure
 
 ```
-app.py                     FastAPI app: /predict and /train
+app.py                     FastAPI app: /predict, /predict-url and /train
 main.py                    Runs the training pipeline from the command line
 push_data.py               Loads the CSV into MongoDB
 test_mongodb.py            Checks the MongoDB connection
 networksecurity/
-  components/              Ingestion, validation, transformation, model training
+  components/              Ingestion, validation, transformation, model training, URL feature extraction
   pipeline/                TrainingPipeline, which chains the stages
   entity/                  Config and artifact classes passed between stages
   constant/                File names, paths and thresholds
@@ -126,5 +160,6 @@ networksecurity/
 data_schema/schema.yaml    Expected columns
 final_model/               Model and preprocessor used by the API
 valid_data/test.csv        Sample input for /predict
-test_data/                 CSV files and a script for checking the API
+test_data/                 CSV files, URLs and scripts for checking the API
+tests/                     Unit tests (run with `python -m pytest tests`)
 ```

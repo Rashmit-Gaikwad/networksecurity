@@ -36,6 +36,11 @@ jobs:
       - name: Check that the code compiles
         run: python -m compileall -q networksecurity app.py main.py push_data.py
 
+      - name: Run unit tests
+        run: |
+          pip install pytest
+          python -m pytest tests -q
+
       - name: Smoke-test the saved model
         run: |
           python - <<'EOF'

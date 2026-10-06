@@ -12,6 +12,10 @@ dagshub
 fastapi
 uvicorn
 python-multipart
+## URL feature extraction for /predict-url
+requests
+beautifulsoup4
+tldextract
 
 
 ##-e .

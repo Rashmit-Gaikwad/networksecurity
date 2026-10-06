@@ -6,6 +6,11 @@ on:
       - main
     paths-ignore:
       - 'README.md'
+  pull_request:
+    branches:
+      - main
+  # The AWS delivery and deployment jobs only run when started by hand from the Actions tab
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -50,6 +55,7 @@ jobs:
   build-and-push-ecr-image:
     name: Continuous Delivery
     needs: integration
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -84,6 +90,7 @@ jobs:
 
   Continuous-Deployment:
     needs: build-and-push-ecr-image
+    if: github.event_name == 'workflow_dispatch'
     runs-on: self-hosted
     steps:
       - name: Checkout
